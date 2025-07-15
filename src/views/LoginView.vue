@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { authService } from '@/services/authService'
-import type { AuthenticationResponse } from '@/types/auth'
+import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/authStore'
+
+const router = useRouter()
+const authStore = useAuthStore()
 
 const email = ref('')
 const password = ref('')
@@ -10,23 +13,17 @@ const error = ref<string | null>(null)
 async function handleLogin() {
   console.log('Login-Versuch mit:', email.value, password.value)
   try {
-    const response: AuthenticationResponse = await authService.login({
+    await authStore.login({
       email: email.value,
       password: password.value,
     })
-
-    if (response.token) {
-      console.log('Login erfolgreich! Token: ', response.token)
-      error.value = null
-    } else if (response.error) {
-      console.error('Login fehlgeschlagen: ', response.error)
-      error.value = response.error
+    router.push('/')
+  } catch (e) {
+    if (e instanceof Error) {
+      error.value = e.message
     } else {
-      console.error('Login fehlgeschlagen: Unbekannter Fehler')
-      error.value = 'Ein unerwarteter Fehler ist aufgetreten'
+      error.value = 'Ein unbekannter Fehler ist aufgetreten.'
     }
-  } catch (error) {
-    console.error('Login fehlgeschlagen: ', error)
   }
 }
 </script>
@@ -50,6 +47,15 @@ async function handleLogin() {
 </template>
 
 <style scoped>
+.login-container {
+  max-width: 400px;
+  margin: 50px auto;
+  padding: 2rem;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
 .error-message {
   background-color: #f8d7da;
   color: #721c24;
@@ -58,14 +64,6 @@ async function handleLogin() {
   border-radius: 4px;
   margin-bottom: 1rem;
   text-align: center;
-}
-.login-container {
-  max-width: 400px;
-  margin: 50px auto;
-  padding: 2rem;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .form-group {
