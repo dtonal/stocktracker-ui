@@ -1,12 +1,33 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { authService } from '@/services/authService'
+import type { AuthenticationResponse } from '@/types/auth'
 
 const email = ref('')
 const password = ref('')
+const error = ref<string | null>(null)
 
-function handleLogin() {
+async function handleLogin() {
   console.log('Login-Versuch mit:', email.value, password.value)
-  // Hier kommt später die API-Anfrage
+  try {
+    const response: AuthenticationResponse = await authService.login({
+      email: email.value,
+      password: password.value,
+    })
+
+    if (response.token) {
+      console.log('Login erfolgreich! Token: ', response.token)
+      error.value = null
+    } else if (response.error) {
+      console.error('Login fehlgeschlagen: ', response.error)
+      error.value = response.error
+    } else {
+      console.error('Login fehlgeschlagen: Unbekannter Fehler')
+      error.value = 'Ein unerwarteter Fehler ist aufgetreten'
+    }
+  } catch (error) {
+    console.error('Login fehlgeschlagen: ', error)
+  }
 }
 </script>
 
@@ -14,6 +35,7 @@ function handleLogin() {
   <div class="login-container">
     <h1>Login</h1>
     <form @submit.prevent="handleLogin">
+      <div v-if="error" class="error-message">{{ error }}</div>
       <div class="form-group">
         <label for="email">E-Mail</label>
         <input type="email" id="email" v-model="email" required />
@@ -28,6 +50,15 @@ function handleLogin() {
 </template>
 
 <style scoped>
+.error-message {
+  background-color: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+  padding: 0.75rem;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+  text-align: center;
+}
 .login-container {
   max-width: 400px;
   margin: 50px auto;
