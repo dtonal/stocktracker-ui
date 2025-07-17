@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount } from '@vue/test-utils'
-import { createTestingPinia } from '@pinia/testing'
 import RegisterView from '../RegisterView.vue'
 
 vi.mock('@/services/authService', () => ({

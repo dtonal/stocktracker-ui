@@ -1,11 +1,7 @@
 <script setup lang="ts">
 import { useAuthStore } from '@/stores/authStore'
-import { computed } from 'vue'
 
 const authStore = useAuthStore()
-
-const isLoggedIn = computed(() => authStore.isLoggedIn)
-const user = computed(() => authStore.user)
 
 function handleLogout() {
   authStore.logout()
