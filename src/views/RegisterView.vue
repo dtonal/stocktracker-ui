@@ -27,8 +27,12 @@ async function handleRegister() {
     setTimeout(() => {
       router.push('/login')
     }, 2000)
-  } catch (e: any) {
-    error.value = e.message || 'Ein Fehler ist aufgetreten.'
+  } catch (e) {
+    if (e instanceof Error) {
+      error.value = e.message
+    } else {
+      error.value = 'Ein unbekannter Fehler ist aufgetreten.'
+    }
   }
 }
 </script>
