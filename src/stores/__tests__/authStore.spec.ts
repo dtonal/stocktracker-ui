@@ -1,111 +1,106 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
 import { useAuthStore } from '../authStore'
 
-// WICHTIG: Das Mock muss ganz oben stehen, bevor der authStore importiert wird!
-// vi.mock() ersetzt die echte authService-Implementierung durch eine Mock-Version.
 vi.mock('@/services/authService', () => ({
   authService: {
     login: vi.fn(),
     register: vi.fn(),
+    getMe: vi.fn(),
   },
 }))
 
-// Nach dem Mock können wir den gemockten authService importieren
 import { authService } from '@/services/authService'
 
 describe('Auth Store', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
-    // Vor jedem Test: Alle Mock-Aufrufe zurücksetzen
     vi.clearAllMocks()
-    // LocalStorage auch cleanen für saubere Tests
     localStorage.clear()
   })
 
-  it('should be logged out initially', () => {
-    const authStore = useAuthStore()
+  afterEach(() => {
+    vi.useRealTimers()
+  })
 
+  it('sollte initial nicht eingeloggt sein', () => {
+    const authStore = useAuthStore()
     expect(authStore.isLoggedIn).toBe(false)
     expect(authStore.token).toBe(null)
   })
 
-  it('sollte erfolgreich einloggen und Token speichern', async () => {
-    // 1. ARRANGE (Setup)
+  it('sollte erfolgreich einloggen, Benutzerdaten abrufen und alles speichern', async () => {
     const authStore = useAuthStore()
     const mockToken = 'fake-jwt-token-12345'
+    const mockUser = { id: 'user-1', name: 'Test User', email: 'test@example.com' }
 
-    // Mock die login-Funktion so, dass sie einen erfolgreichen Response zurückgibt
-    vi.mocked(authService.login).mockResolvedValue({
-      token: mockToken,
-    })
+    vi.mocked(authService.login).mockResolvedValue({ token: mockToken })
+    vi.mocked(authService.getMe).mockResolvedValue(mockUser)
 
-    // 2. ACT (Ausführung)
     await authStore.login({
       email: 'test@example.com',
       password: 'password123',
     })
 
-    // 3. ASSERT (Überprüfung)
-    expect(authStore.isLoggedIn).toBe(true)
-    expect(authStore.token).toBe(mockToken)
-    expect(authStore.authToken).toBe(mockToken)
-
-    // Zusätzlich prüfen: Wurde der authService korrekt aufgerufen?
     expect(authService.login).toHaveBeenCalledOnce()
     expect(authService.login).toHaveBeenCalledWith({
       email: 'test@example.com',
       password: 'password123',
     })
 
-    // Und: Wurde der Token im localStorage gespeichert?
+    expect(authService.getMe).toHaveBeenCalledOnce()
+    expect(authService.getMe).toHaveBeenCalledWith(mockToken)
+
+    expect(authStore.isLoggedIn).toBe(true)
+    expect(authStore.token).toBe(mockToken)
+    expect(authStore.user).toEqual(mockUser)
+
     expect(localStorage.getItem('stocktracker-auth-token')).toBe(mockToken)
   })
 
-  it('sollte bei fehlgeschlagenem Login einen Fehler werfen', async () => {
-    // 1. ARRANGE
+  it('sollte bei fehlgeschlagenem Login einen Fehler werfen und keine Benutzerdaten abrufen', async () => {
     const authStore = useAuthStore()
+    vi.mocked(authService.login).mockResolvedValue({ error: 'Invalid credentials' })
 
-    // Mock die login-Funktion so, dass sie einen Fehler-Response zurückgibt
-    vi.mocked(authService.login).mockResolvedValue({
-      error: 'Invalid credentials',
-    })
-
-    // 2. ACT & ASSERT
-    // Wir erwarten, dass die login-Action einen Fehler wirft
     await expect(
-      authStore.login({
-        email: 'wrong@example.com',
-        password: 'wrongpassword',
-      }),
+      authStore.login({ email: 'wrong@example.com', password: 'wrongpassword' }),
     ).rejects.toThrow('Invalid credentials')
 
-    // Der Store sollte weiterhin ausgeloggt sein
+    expect(authService.getMe).not.toHaveBeenCalled()
+
     expect(authStore.isLoggedIn).toBe(false)
     expect(authStore.token).toBe(null)
+    expect(authStore.user).toBe(null)
+  })
 
-    // Kein Token im localStorage
+  it('sollte beim Logout Token und Benutzer entfernen', () => {
+    const authStore = useAuthStore()
+    authStore.token = 'fake-token'
+    authStore.user = { id: 'user-1', name: 'Test User', email: 'test@example.com' }
+    localStorage.setItem('stocktracker-auth-token', 'fake-token')
+    expect(authStore.isLoggedIn).toBe(true)
+
+    authStore.logout()
+
+    expect(authStore.isLoggedIn).toBe(false)
+    expect(authStore.token).toBe(null)
+    expect(authStore.user).toBe(null)
     expect(localStorage.getItem('stocktracker-auth-token')).toBe(null)
   })
 
-  it('sollte beim Logout Token entfernen und ausloggen', () => {
-    // 1. ARRANGE - Simuliere einen eingeloggten Zustand
-    const authStore = useAuthStore()
-    const mockToken = 'fake-token'
-
-    // Setze Token direkt im Store (simuliert einen erfolgreichen Login)
-    authStore.token = mockToken
+  it('sollte beim Start der App versuchen, den Benutzer abzurufen, wenn ein Token vorhanden ist', async () => {
+    const mockToken = 'existing-token'
+    const mockUser = { id: 'user-1', name: 'Test User', email: 'test@example.com' }
     localStorage.setItem('stocktracker-auth-token', mockToken)
+    vi.mocked(authService.getMe).mockResolvedValue(mockUser)
 
-    // Verify setup
+    const authStore = useAuthStore()
+
+    await new Promise((resolve) => setTimeout(resolve, 0))
+
+    expect(authService.getMe).toHaveBeenCalledOnce()
+    expect(authService.getMe).toHaveBeenCalledWith(mockToken)
+    expect(authStore.user).toEqual(mockUser)
     expect(authStore.isLoggedIn).toBe(true)
-
-    // 2. ACT
-    authStore.logout()
-
-    // 3. ASSERT
-    expect(authStore.isLoggedIn).toBe(false)
-    expect(authStore.token).toBe(null)
-    expect(localStorage.getItem('stocktracker-auth-token')).toBe(null)
   })
 })

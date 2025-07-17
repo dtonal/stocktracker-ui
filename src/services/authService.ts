@@ -58,4 +58,17 @@ export const authService = {
       throw new Error(extractErrorMessage(error))
     }
   },
+
+  async getMe(token: string): Promise<UserResponse> {
+    try {
+      const response = await apiClient.get<UserResponse>('/users/me', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+      return response.data
+    } catch (error) {
+      throw new Error(extractErrorMessage(error))
+    }
+  },
 }

@@ -1,9 +1,7 @@
 @import './base.css';
 
 #app {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
+  /* Wir entfernen das meiste Styling von #app, da das Layout jetzt von App.vue gesteuert wird */
   font-weight: normal;
 }
 
@@ -21,13 +19,5 @@ a,
   }
 }
 
-@media (min-width: 1024px) {
-  body {
-    display: flex;
-    place-items: center;
-  }
-
-  #app {
-    padding: 0 2rem;
-  }
-}
+/* Wir entfernen die alten @media-Regeln für body und #app,
+   da sie nicht mehr zum neuen Layout passen. */

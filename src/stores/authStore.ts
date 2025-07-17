@@ -34,6 +34,8 @@ export const useAuthStore = defineStore('auth', () => {
     if (response.token) {
       token.value = response.token
       localStorage.setItem(TOKEN_STORAGE_KEY, response.token)
+
+      await fetchUser()
     } else {
       throw new Error(response.error || 'Login fehlgeschlagen')
     }
@@ -48,6 +50,22 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.removeItem(TOKEN_STORAGE_KEY)
   }
 
+  async function fetchUser() {
+    const currentToken = token.value
+    try {
+      if (currentToken) {
+        const response = await authService.getMe(currentToken)
+        user.value = response
+      }
+    } catch (error) {
+      console.error('Fehler beim Abrufen der Benutzerdaten:', error)
+      // Bei Fehler (z.B. ungültiger Token) den Benutzer ausloggen.
+      logout()
+    }
+  }
+
+  fetchUser()
+
   return {
     // State
     token,
@@ -58,5 +76,6 @@ export const useAuthStore = defineStore('auth', () => {
     // Actions
     login,
     logout,
+    fetchUser,
   }
 })

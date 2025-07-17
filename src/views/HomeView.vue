@@ -1,5 +1,4 @@
 <script setup lang="ts"></script>
-
 <template>
   <main>
     <h1>Willkommen beim Stocktracker!</h1>
