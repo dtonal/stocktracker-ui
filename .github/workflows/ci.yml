@@ -1,0 +1,45 @@
+# Name des Workflows, der in der GitHub UI angezeigt wird
+name: Stocktracker UI CI
+
+# Trigger: Wann soll dieser Workflow ausgeführt werden?
+on:
+  # Bei jedem Push auf den 'main'-Branch
+  push:
+    branches: ['main']
+  # Bei jedem neuen Pull Request, der auf den 'main'-Branch zielt
+  pull_request:
+    branches: ['main']
+
+# Definiert die Jobs, die ausgeführt werden sollen
+jobs:
+  # Wir nennen unseren Job 'build-and-test'
+  build-and-test:
+    # Auf welchem Betriebssystem soll der Job laufen?
+    runs-on: ubuntu-latest
+
+    # Definiert die Schritte, die in diesem Job ausgeführt werden
+    steps:
+      # Schritt 1: Das Repository auschecken
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Schritt 2: Node.js-Umgebung einrichten
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          # Der Pfad ist jetzt einfacher, da wir im richtigen Repo sind
+          cache-dependency-path: package-lock.json
+
+      # Schritt 3: Abhängigkeiten installieren
+      - name: Install dependencies
+        run: npm ci
+
+      # Schritt 4: Den Linter ausführen
+      - name: Run linter
+        run: npm run lint
+
+      # Schritt 5: Die Unit-Tests mit Coverage ausführen
+      - name: Run unit tests with coverage
+        run: npm run coverage
