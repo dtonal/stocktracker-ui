@@ -2,8 +2,14 @@ import axios from 'axios'
 import type { AuthenticationRequest, AuthenticationResponse } from '@/types/auth'
 import type { UserRegistrationRequest, UserResponse } from '@/types/user'
 
+// Der entscheidende Teil:
+// Wir lesen die Basis-URL aus der Vite-Umgebungsvariable.
+// Der `|| '/api'` Teil ist ein Fallback, damit unsere lokale Entwicklung
+// mit dem Proxy weiterhin funktioniert.
+const baseURL = import.meta.env.VITE_API_BASE_URL || '/api'
+
 const apiClient = axios.create({
-  baseURL: '/api',
+  baseURL: baseURL, // Verwende die dynamische URL hier
   headers: {
     'Content-Type': 'application/json',
   },
