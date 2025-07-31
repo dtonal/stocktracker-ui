@@ -18,6 +18,7 @@ function handleLogout() {
 
       <nav class="navigation" v-if="authStore.isLoggedIn">
         <span class="user-info">Hallo, {{ authStore.user?.name || 'Benutzer' }}</span>
+        <RouterLink to="/portfolio">Portfolio</RouterLink>
         <button @click="handleLogout" class="logout-button">Logout</button>
       </nav>
       <nav class="navigation" v-else>
