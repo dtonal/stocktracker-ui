@@ -3,7 +3,6 @@ import { usePortfolioStore } from '@/stores/portfolioStore'
 import { onMounted, ref } from 'vue'
 
 import DeleteIcon from 'vue-material-design-icons/Delete.vue'
-import PencilIcon from 'vue-material-design-icons/Pencil.vue'
 
 const portfolioStore = usePortfolioStore()
 const isCreateFormVisible = ref(false)
@@ -103,7 +102,6 @@ async function handleDeletePortfolio(portfolioId: string) {
           <p v-else class="empty-description">Keine Beschreibung</p>
         </div>
         <div class="card-footer">
-          <
           <span>Erstellt am: {{ new Date(portfolio.createdAt).toLocaleDateString() }}</span>
         </div>
       </div>
