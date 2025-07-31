@@ -6,3 +6,8 @@ export interface Portfolio {
   updatedAt: string
   userId: string
 }
+
+export interface PortfolioCreateRequest {
+  name: string
+  description: string
+}

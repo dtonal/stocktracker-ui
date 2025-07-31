@@ -1,7 +1,11 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
-import type { Portfolio } from '@/types/portfolio'
-import { getPortfoliosForCurrentUser } from '@/services/portfolioService'
+import type { Portfolio, PortfolioCreateRequest } from '@/types/portfolio'
+import {
+  getPortfoliosForCurrentUser,
+  createPortfolio,
+  deletePortfolio,
+} from '@/services/portfolioService'
 
 export const usePortfolioStore = defineStore('portfolio', () => {
   // STATE
@@ -30,10 +34,23 @@ export const usePortfolioStore = defineStore('portfolio', () => {
     }
   }
 
+  async function handleCreatePortfolio(name: string, description: string) {
+    const request: PortfolioCreateRequest = { name, description }
+    const response = await createPortfolio(request)
+    portfolios.value.push(response)
+  }
+
+  async function handleDeletePortfolio(portfolioId: string) {
+    await deletePortfolio(portfolioId)
+    portfolios.value = portfolios.value.filter((portfolio) => portfolio.id !== portfolioId)
+  }
+
   return {
     portfolios,
     isLoading,
     error,
     fetchPortfolios,
+    handleCreatePortfolio,
+    handleDeletePortfolio,
   }
 })

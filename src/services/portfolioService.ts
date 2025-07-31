@@ -1,5 +1,5 @@
 import axios from 'axios'
-import type { Portfolio } from '@/types/portfolio'
+import type { Portfolio, PortfolioCreateRequest } from '@/types/portfolio'
 import { useAuthStore } from '@/stores/authStore'
 
 const baseURL = import.meta.env.VITE_API_BASE_URL || '/api'
@@ -35,9 +35,29 @@ apiClient.interceptors.request.use(
 export async function getPortfoliosForCurrentUser(): Promise<Portfolio[]> {
   try {
     const response = await apiClient.get<Portfolio[]>('/portfolios')
+    console.log('getPortfoliosForCurrentUser response:', response.data)
     return response.data
   } catch (error) {
     console.error('Fehler beim Abrufen der Portfolios:', error)
+    throw error
+  }
+}
+
+export async function createPortfolio(request: PortfolioCreateRequest): Promise<Portfolio> {
+  try {
+    const response = await apiClient.post<Portfolio>('/portfolios', request)
+    return response.data
+  } catch (error) {
+    console.error('Fehler beim Erstellen des Portfolios:', error)
+    throw error
+  }
+}
+
+export async function deletePortfolio(portfolioId: string): Promise<void> {
+  try {
+    await apiClient.delete(`/portfolios/${portfolioId}`)
+  } catch (error) {
+    console.error('Fehler beim Löschen des Portfolios:', error)
     throw error
   }
 }
