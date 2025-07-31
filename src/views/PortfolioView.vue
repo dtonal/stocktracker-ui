@@ -23,6 +23,8 @@ async function handleCreatePortfolio() {
   console.log('createPortfolio')
   await portfolioStore.handleCreatePortfolio(newPortfolioName.value, newPortfolioDescription.value)
   isCreateFormVisible.value = false
+  newPortfolioName.value = ''
+  newPortfolioDescription.value = ''
 }
 
 async function handleDeletePortfolio(portfolioId: string) {

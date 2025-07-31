@@ -1,11 +1,7 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import type { Portfolio, PortfolioCreateRequest } from '@/types/portfolio'
-import {
-  getPortfoliosForCurrentUser,
-  createPortfolio,
-  deletePortfolio,
-} from '@/services/portfolioService'
+import { portfolioService } from '@/services/portfolioService'
 
 export const usePortfolioStore = defineStore('portfolio', () => {
   // STATE
@@ -14,13 +10,12 @@ export const usePortfolioStore = defineStore('portfolio', () => {
   const error = ref<string | null>(null)
 
   // ACTIONS
-
   async function fetchPortfolios() {
     isLoading.value = true
     error.value = null
 
     try {
-      portfolios.value = await getPortfoliosForCurrentUser()
+      portfolios.value = await portfolioService.getPortfoliosForCurrentUser()
     } catch (e) {
       if (e instanceof Error) {
         error.value = e.message
@@ -36,13 +31,33 @@ export const usePortfolioStore = defineStore('portfolio', () => {
 
   async function handleCreatePortfolio(name: string, description: string) {
     const request: PortfolioCreateRequest = { name, description }
-    const response = await createPortfolio(request)
-    portfolios.value.push(response)
+    try {
+      const response = await portfolioService.createPortfolio(request)
+      portfolios.value.push(response)
+    } catch (e) {
+      if (e instanceof Error) {
+        error.value = e.message
+        console.error('Fehler beim Erstellen des Portfolios:', e)
+      } else {
+        error.value = 'Ein unbekannter Fehler ist aufgetreten.'
+        console.error('Fehler beim Erstellen des Portfolios:', e)
+      }
+    }
   }
 
   async function handleDeletePortfolio(portfolioId: string) {
-    await deletePortfolio(portfolioId)
-    portfolios.value = portfolios.value.filter((portfolio) => portfolio.id !== portfolioId)
+    try {
+      await portfolioService.deletePortfolio(portfolioId)
+      portfolios.value = portfolios.value.filter((portfolio) => portfolio.id !== portfolioId)
+    } catch (e) {
+      if (e instanceof Error) {
+        error.value = e.message
+        console.error('Fehler beim Löschen des Portfolios:', e)
+      } else {
+        error.value = 'Ein unbekannter Fehler ist aufgetreten.'
+        console.error('Fehler beim Löschen des Portfolios:', e)
+      }
+    }
   }
 
   return {
