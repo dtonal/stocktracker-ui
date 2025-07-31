@@ -3,9 +3,6 @@ name: Stocktracker UI CI
 
 # Trigger: Wann soll dieser Workflow ausgeführt werden?
 on:
-  # Bei jedem Push auf den 'main'-Branch
-  push:
-    branches: ['main']
   # Bei jedem neuen Pull Request, der auf den 'main'-Branch zielt
   pull_request:
     branches: ['main']
