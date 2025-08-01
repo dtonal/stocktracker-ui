@@ -59,4 +59,5 @@ jobs:
           gcloud run deploy ${{ env.IMAGE_NAME }} \
             --image ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.IMAGE_REPO }}/${{ env.IMAGE_NAME }}:${DOCKER_TAG} \
             --region ${{ env.REGION }} \
-            --allow-unauthenticated
+            --allow-unauthenticated \
+            --service-account=stocktracker-backend-runner@stocktracker-production-466713.iam.gserviceaccount.com
