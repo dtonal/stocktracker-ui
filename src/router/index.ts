@@ -18,6 +18,13 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
+      path: '/portfolio/:id',
+      name: 'portfolio-detail',
+      component: () => import('../views/portfolio/PortfolioDetailView.vue'),
+      meta: { requiresAuth: true },
+      props: true,
+    },
+    {
       path: '/login',
       name: 'login',
       component: () => import('../views/LoginView.vue'),

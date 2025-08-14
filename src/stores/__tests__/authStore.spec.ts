@@ -1,6 +1,7 @@
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
 import { useAuthStore } from '../authStore'
+import { authService } from '@/services/authService'
 
 vi.mock('@/services/authService', () => ({
   authService: {
@@ -10,17 +11,11 @@ vi.mock('@/services/authService', () => ({
   },
 }))
 
-import { authService } from '@/services/authService'
-
 describe('Auth Store', () => {
   beforeEach(() => {
-    setActivePinia(createPinia())
     vi.clearAllMocks()
+    setActivePinia(createPinia())
     localStorage.clear()
-  })
-
-  afterEach(() => {
-    vi.useRealTimers()
   })
 
   it('sollte initial nicht eingeloggt sein', () => {
@@ -102,5 +97,27 @@ describe('Auth Store', () => {
     expect(authService.getMe).toHaveBeenCalledWith(mockToken)
     expect(authStore.user).toEqual(mockUser)
     expect(authStore.isLoggedIn).toBe(true)
+  })
+
+  it('sollte den Benutzer ausloggen, wenn fetchUser fehlschlägt', async () => {
+    // Setup
+    const pinia = createPinia()
+    setActivePinia(pinia)
+    const authStore = useAuthStore()
+
+    // Mock initial state
+    authStore.token = 'invalid-token'
+
+    // Mock service rejection
+    authService.getMe.mockRejectedValue(new Error('Invalid Token'))
+
+    // Action
+    await authStore.fetchUser()
+
+    // Assertions
+    expect(authService.getMe).toHaveBeenCalledWith('invalid-token')
+    expect(authStore.token).toBeNull()
+    expect(authStore.user).toBeNull()
+    expect(localStorage.getItem('stocktracker-auth-token')).toBeNull()
   })
 })
