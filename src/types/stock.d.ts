@@ -7,3 +7,16 @@ export interface Stock {
   createdAt: string
   updatedAt: string
 }
+
+export interface StockSearchItem {
+  symbol: string
+  description: string
+  displaySymbol: string
+  type: string
+  isSavedInDb: boolean
+}
+
+export interface StockSearchResult {
+  count: number
+  result: StockSearchItem[]
+}
