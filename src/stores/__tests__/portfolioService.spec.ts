@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest'
-import { setActivePinia, createPinia } from 'pinia'
+import { createPinia, setActivePinia } from 'pinia'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { usePortfolioStore } from '../portfolioStore'
 
 vi.mock('@/services/portfolioService', () => ({
@@ -7,10 +7,15 @@ vi.mock('@/services/portfolioService', () => ({
     getPortfoliosForCurrentUser: vi.fn(),
     createPortfolio: vi.fn(),
     deletePortfolio: vi.fn(),
+    getPortfolio: vi.fn(),
+    createTransaction: vi.fn(),
+    deleteTransaction: vi.fn(),
   },
 }))
 
+import type { NewTransactionData } from '@/components/AddTransactionModal.vue'
 import { portfolioService } from '@/services/portfolioService'
+import { TransactionType } from '@/types/transaction'
 
 describe('Portfolio Store', () => {
   beforeEach(() => {
@@ -27,7 +32,7 @@ describe('Portfolio Store', () => {
     expect(portfolioStore.portfolios).toEqual([])
   })
 
-  it('sollte initiaö nicht im loading state sein', () => {
+  it('sollte initial nicht im loading state sein', () => {
     const portfolioStore = usePortfolioStore()
     expect(portfolioStore.isLoading).toBe(false)
   })
@@ -162,5 +167,208 @@ describe('Portfolio Store', () => {
     await fetchPromise
 
     expect(portfolioStore.isLoading).toBe(false)
+  })
+
+  it('sollte einen unbekannten Fehler beim Laden der Portfolios behandeln', async () => {
+    const errorMessage = 'Ein unbekannter Fehler ist aufgetreten.'
+    vi.mocked(portfolioService.getPortfoliosForCurrentUser).mockRejectedValue({})
+    const portfolioStore = usePortfolioStore()
+    await portfolioStore.fetchPortfolios()
+    expect(portfolioStore.error).toBe(errorMessage)
+  })
+
+  it('sollte einen unbekannten Fehler beim Erstellen des Portfolios behandeln', async () => {
+    const errorMessage = 'Ein unbekannter Fehler ist aufgetreten.'
+    vi.mocked(portfolioService.createPortfolio).mockRejectedValue({})
+    const portfolioStore = usePortfolioStore()
+    await portfolioStore.handleCreatePortfolio('Neues Depot', 'Test')
+    expect(portfolioStore.error).toBe(errorMessage)
+  })
+
+  it('sollte einen unbekannten Fehler beim Löschen des Portfolios behandeln', async () => {
+    const errorMessage = 'Ein unbekannter Fehler ist aufgetreten.'
+    vi.mocked(portfolioService.deletePortfolio).mockRejectedValue({})
+    const portfolioStore = usePortfolioStore()
+    await portfolioStore.handleDeletePortfolio('1')
+    expect(portfolioStore.error).toBe(errorMessage)
+  })
+
+  it('sollte ein einzelnes Portfolio laden können', async () => {
+    const mockPortfolio = {
+      id: '1',
+      name: 'Test Portfolio',
+      description: 'Test',
+      transactions: [],
+      createdAt: '',
+      updatedAt: '',
+      userId: '',
+    }
+    vi.mocked(portfolioService.getPortfolio).mockResolvedValue(mockPortfolio)
+    const portfolioStore = usePortfolioStore()
+    await portfolioStore.fetchPortfolio('1')
+    expect(portfolioService.getPortfolio).toHaveBeenCalledWith('1')
+    expect(portfolioStore.currentPortfolio).toEqual(mockPortfolio)
+  })
+
+  it('sollte einen Fehler beim Laden eines einzelnen Portfolios behandeln', async () => {
+    const errorMessage = 'Fehler beim Laden'
+    vi.mocked(portfolioService.getPortfolio).mockRejectedValue(new Error(errorMessage))
+    const portfolioStore = usePortfolioStore()
+    await portfolioStore.fetchPortfolio('1')
+    expect(portfolioStore.error).toBe(errorMessage)
+  })
+
+  it('sollte einen unbekannten Fehler beim Laden eines einzelnen Portfolios behandeln', async () => {
+    const errorMessage = 'Ein unbekannter Fehler ist aufgetreten.'
+    vi.mocked(portfolioService.getPortfolio).mockRejectedValue({})
+    const portfolioStore = usePortfolioStore()
+    await portfolioStore.fetchPortfolio('1')
+    expect(portfolioStore.error).toBe(errorMessage)
+  })
+
+  it('sollte eine Transaktion erstellen können', async () => {
+    const portfolioId = '1'
+    const newTransaction: NewTransactionData = {
+      type: TransactionType.BUY,
+      ticker: 'AAPL',
+      quantity: 10,
+      price: 150,
+      date: '2023-01-01',
+    }
+    const portfolioStore = usePortfolioStore()
+    portfolioStore.currentPortfolio = {
+      id: portfolioId,
+      name: 'Test',
+      description: '',
+      transactions: [],
+      createdAt: '',
+      updatedAt: '',
+      userId: '',
+    }
+    vi.mocked(portfolioService.createTransaction).mockResolvedValue(undefined)
+    vi.mocked(portfolioService.getPortfolio).mockResolvedValue(portfolioStore.currentPortfolio)
+
+    await portfolioStore.handleCreateTransaction(portfolioId, newTransaction)
+
+    expect(portfolioService.createTransaction).toHaveBeenCalled()
+    expect(portfolioService.getPortfolio).toHaveBeenCalledWith(portfolioId)
+  })
+
+  it('sollte einen Fehler werfen, wenn kein Portfolio beim Erstellen einer Transaktion vorhanden ist', async () => {
+    const portfolioStore = usePortfolioStore()
+    portfolioStore.currentPortfolio = null
+    await portfolioStore.handleCreateTransaction('1', {} as NewTransactionData)
+    expect(portfolioStore.transactionError).toContain('Portfolio not found')
+  })
+
+  it('sollte einen Axios-Fehler beim Erstellen einer Transaktion behandeln', async () => {
+    const backendError = 'Nicht genügend Guthaben'
+    const axiosError = { isAxiosError: true, response: { data: { error: backendError } } }
+    vi.mocked(portfolioService.createTransaction).mockRejectedValue(axiosError)
+
+    const portfolioStore = usePortfolioStore()
+    portfolioStore.currentPortfolio = {
+      id: '1',
+      name: 'Test',
+      description: '',
+      transactions: [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      userId: '',
+    }
+
+    await portfolioStore.handleCreateTransaction('1', {
+      type: TransactionType.BUY,
+      ticker: 'AAPL',
+      quantity: 10,
+      price: 150,
+      date: '2023-01-01',
+    } as NewTransactionData)
+    console.log(portfolioStore.transactionError)
+    expect(portfolioStore.transactionError).toContain(backendError)
+  })
+
+  it('sollte einen generischen Axios-Fehler beim Erstellen einer Transaktion behandeln', async () => {
+    const axiosError = { isAxiosError: true, response: { data: {} } } // Kein 'error'-Feld
+    vi.mocked(portfolioService.createTransaction).mockRejectedValue(axiosError)
+
+    const portfolioStore = usePortfolioStore()
+    portfolioStore.currentPortfolio = {
+      id: '1',
+      name: 'Test',
+      description: '',
+      transactions: [],
+      createdAt: '',
+      updatedAt: '',
+      userId: '',
+    }
+
+    await portfolioStore.handleCreateTransaction('1', {
+      type: TransactionType.BUY,
+      ticker: 'AAPL',
+      quantity: 10,
+      price: 150,
+      date: '2023-01-01',
+    } as NewTransactionData)
+    expect(portfolioStore.transactionError).toBe('Ein unbekannter Fehler ist aufgetreten.')
+  })
+
+  it('sollte einen unbekannten Fehler beim Erstellen einer Transaktion behandeln', async () => {
+    vi.mocked(portfolioService.createTransaction).mockRejectedValue({})
+    const portfolioStore = usePortfolioStore()
+    portfolioStore.currentPortfolio = {
+      id: '1',
+      name: 'Test',
+      description: '',
+      transactions: [],
+      createdAt: '',
+      updatedAt: '',
+      userId: '',
+    }
+    await portfolioStore.handleCreateTransaction('1', {
+      type: TransactionType.BUY,
+      ticker: 'AAPL',
+      quantity: 10,
+      price: 150,
+      date: '2023-01-01',
+    } as NewTransactionData)
+    expect(portfolioStore.transactionError).toBe('Ein unbekannter Fehler ist aufgetreten.')
+  })
+
+  it('sollte eine Transaktion löschen können', async () => {
+    const portfolioId = '1'
+    const transactionId = 't1'
+    const portfolioStore = usePortfolioStore()
+    portfolioStore.currentPortfolio = {
+      id: portfolioId,
+      name: 'Test',
+      description: '',
+      transactions: [],
+      createdAt: '',
+      updatedAt: '',
+      userId: '',
+    }
+    vi.mocked(portfolioService.deleteTransaction).mockResolvedValue(undefined)
+    vi.mocked(portfolioService.getPortfolio).mockResolvedValue(portfolioStore.currentPortfolio)
+
+    await portfolioStore.handleDeleteTransaction(portfolioId, transactionId)
+
+    expect(portfolioService.deleteTransaction).toHaveBeenCalledWith(portfolioId, transactionId)
+    expect(portfolioService.getPortfolio).toHaveBeenCalledWith(portfolioId)
+  })
+
+  it('sollte einen Fehler beim Löschen einer Transaktion behandeln', async () => {
+    const errorMessage = 'Fehler beim Löschen'
+    vi.mocked(portfolioService.deleteTransaction).mockRejectedValue(new Error(errorMessage))
+    const portfolioStore = usePortfolioStore()
+    await portfolioStore.handleDeleteTransaction('1', 't1')
+    expect(portfolioStore.transactionError).toContain(errorMessage)
+  })
+
+  it('sollte einen unbekannten Fehler beim Löschen einer Transaktion behandeln', async () => {
+    vi.mocked(portfolioService.deleteTransaction).mockRejectedValue({})
+    const portfolioStore = usePortfolioStore()
+    await portfolioStore.handleDeleteTransaction('1', 't1')
+    expect(portfolioStore.transactionError).toBe('Ein unbekannter Fehler ist aufgetreten.')
   })
 })

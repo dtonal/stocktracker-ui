@@ -5,6 +5,7 @@ export interface Portfolio {
   createdAt: string
   updatedAt: string
   userId: string
+  transactions: StockTransaction[]
 }
 
 export interface PortfolioCreateRequest {

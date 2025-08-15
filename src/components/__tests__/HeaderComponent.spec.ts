@@ -3,118 +3,81 @@ import { mount } from '@vue/test-utils'
 import { createTestingPinia } from '@pinia/testing'
 import { useAuthStore } from '@/stores/authStore'
 import HeaderComponent from '@/components/HeaderComponent.vue'
+import type { UserResponse } from '@/types/user'
 
-describe('HeaderComponent', () => {
+describe('HeaderComponent.vue', () => {
+  // Helper function to mount the component with a specific auth state
+  const createWrapper = (isLoggedIn = false, user: Partial<UserResponse> | null = null) => {
+    const pinia = createTestingPinia({ createSpy: vi.fn })
+    const authStore = useAuthStore(pinia)
+
+    // Set store state
+    authStore.token = isLoggedIn ? 'fake-token' : null
+    authStore.user = isLoggedIn ? (user as UserResponse) : null
+
+    const wrapper = mount(HeaderComponent, {
+      global: {
+        plugins: [pinia],
+        stubs: {
+          RouterLink: {
+            template: '<a :to="to"><slot /></a>',
+            props: ['to'],
+          },
+        },
+      },
+    })
+    return { wrapper, authStore }
+  }
+
   beforeEach(() => {
     vi.clearAllMocks()
   })
 
-  it('if user is logged in, the component should render the user info', async () => {
-    const wrapper = mount(HeaderComponent, {
-      global: {
-        plugins: [createTestingPinia({ createSpy: vi.fn })],
-      },
+  describe('when user is not logged in', () => {
+    it('shows login and register links', () => {
+      const { wrapper } = createWrapper(false)
+      expect(wrapper.find('a[to="/login"]').exists()).toBe(true)
+      expect(wrapper.find('a[to="/register"]').exists()).toBe(true)
     })
 
-    const authStore = useAuthStore()
-
-    // Act
-    authStore.token = '1234567890'
-    authStore.user = {
-      id: '1',
-      name: 'John Doe',
-      email: 'john.doe@example.com',
-    }
-
-    // HIER IST DER SCHLÜSSEL: Warte auf das nächste "DOM Update Tick"
-    await wrapper.vm.$nextTick()
-
-    const userInfo = wrapper.find('.user-info')
-    expect(userInfo.text()).toContain('John Doe')
+    it('does not show user info or logout button', () => {
+      const { wrapper } = createWrapper(false)
+      expect(wrapper.find('.user-info').exists()).toBe(false)
+      expect(wrapper.find('.logout-button').exists()).toBe(false)
+    })
   })
 
-  it('if user is logged in, the component should show logout button', async () => {
-    const wrapper = mount(HeaderComponent, {
-      global: {
-        plugins: [createTestingPinia({ createSpy: vi.fn })],
-      },
+  describe('when user is logged in', () => {
+    it('shows user name when available', async () => {
+      const { wrapper } = createWrapper(true, {
+        id: '1',
+        email: 'user@test.com',
+        name: 'Test User',
+      })
+      expect(wrapper.find('.user-info').text()).toBe('Hallo, Test User')
     })
 
-    const authStore = useAuthStore()
-
-    // Act
-    authStore.token = '1234567890'
-    authStore.user = {
-      id: '1',
-      name: 'John Doe',
-      email: 'john.doe@example.com',
-    }
-    await wrapper.vm.$nextTick()
-
-    const logoutButton = wrapper.find('.logout-button')
-    expect(logoutButton.exists()).toBe(true)
-  })
-
-  it('if user is not logged in, the component should show login and register buttons', async () => {
-    const wrapper = mount(HeaderComponent, {
-      global: {
-        plugins: [createTestingPinia({ createSpy: vi.fn })],
-      },
+    it('shows fallback text when user name is not available', async () => {
+      const { wrapper } = createWrapper(true, { id: '1', email: 'user@test.com' }) // No name property
+      expect(wrapper.find('.user-info').text()).toBe('Hallo, Benutzer')
     })
 
-    const loginButton = wrapper.find('RouterLink[to="/login"]')
-    const registerButton = wrapper.find('RouterLink[to="/register"]')
-    expect(loginButton.exists()).toBe(true)
-    expect(registerButton.exists()).toBe(true)
-  })
-
-  it('if user is logged in and logout button is clicked, the user should be logged out', async () => {
-    const wrapper = mount(HeaderComponent, {
-      global: {
-        plugins: [createTestingPinia({ createSpy: vi.fn })],
-      },
+    it('shows portfolio link and logout button', () => {
+      const { wrapper } = createWrapper(true, { id: '1', name: 'Test' })
+      expect(wrapper.find('a[to="/portfolio"]').exists()).toBe(true)
+      expect(wrapper.find('.logout-button').exists()).toBe(true)
     })
 
-    const authStore = useAuthStore()
-
-    // Act
-    authStore.token = '1234567890'
-    authStore.user = {
-      id: '1',
-      name: 'John Doe',
-      email: 'john.doe@example.com',
-    }
-
-    await wrapper.vm.$nextTick()
-
-    const logoutButton = wrapper.find('.logout-button')
-    await logoutButton.trigger('click')
-
-    expect(authStore.logout).toHaveBeenCalled()
-  })
-
-  it('if user is logged in, login and register buttons should not be shown', async () => {
-    const wrapper = mount(HeaderComponent, {
-      global: {
-        plugins: [createTestingPinia({ createSpy: vi.fn })],
-      },
+    it('does not show login and register links', () => {
+      const { wrapper } = createWrapper(true, { id: '1', name: 'Test' })
+      expect(wrapper.find('a[to="/login"]').exists()).toBe(false)
+      expect(wrapper.find('a[to="/register"]').exists()).toBe(false)
     })
 
-    const authStore = useAuthStore()
-
-    // Act
-    authStore.token = '1234567890'
-    authStore.user = {
-      id: '1',
-      name: 'John Doe',
-      email: 'john.doe@example.com',
-    }
-
-    await wrapper.vm.$nextTick()
-
-    const loginButton = wrapper.find('RouterLink[to="/login"]')
-    const registerButton = wrapper.find('RouterLink[to="/register"]')
-    expect(loginButton.exists()).toBe(false)
-    expect(registerButton.exists()).toBe(false)
+    it('calls authStore.logout when logout button is clicked', async () => {
+      const { wrapper, authStore } = createWrapper(true, { id: '1', name: 'Test' })
+      await wrapper.find('.logout-button').trigger('click')
+      expect(authStore.logout).toHaveBeenCalledOnce()
+    })
   })
 })
