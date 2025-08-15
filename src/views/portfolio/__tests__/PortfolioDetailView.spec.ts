@@ -5,6 +5,7 @@ import { usePortfolioStore } from '@/stores/portfolioStore'
 import PortfolioDetailView from '../PortfolioDetailView.vue'
 import type { Portfolio } from '@/types/portfolio'
 import { TransactionType } from '@/types/transaction'
+import type { Pinia } from 'pinia'
 
 // Mocking vue-router
 const mockRouter = {
@@ -66,7 +67,7 @@ describe('PortfolioDetailView.vue', () => {
 
   let portfolioStore: ReturnType<typeof usePortfolioStore>
 
-  const createWrapper = (pinia: any) => {
+  const createWrapper = (pinia: Pinia) => {
     return mount(PortfolioDetailView, {
       global: {
         plugins: [pinia],

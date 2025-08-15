@@ -1,11 +1,9 @@
-import { ref } from 'vue'
-import { defineStore } from 'pinia'
-import type { Portfolio, PortfolioCreateRequest } from '@/types/portfolio'
-import { portfolioService } from '@/services/portfolioService'
 import type { NewTransactionData } from '@/components/AddTransactionModal.vue'
+import { portfolioService } from '@/services/portfolioService'
+import type { Portfolio, PortfolioCreateRequest } from '@/types/portfolio'
 import { isAxiosError } from 'axios'
-
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+import { defineStore } from 'pinia'
+import { ref } from 'vue'
 
 export const usePortfolioStore = defineStore('portfolio', () => {
   // STATE

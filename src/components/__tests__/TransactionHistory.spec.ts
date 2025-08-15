@@ -1,8 +1,8 @@
-import { describe, it, expect, vi } from 'vitest'
-import { mount } from '@vue/test-utils'
-import TransactionHistory from '../TransactionHistory.vue'
 import type { Portfolio } from '@/types/portfolio'
-import { TransactionType } from '@/types/transaction'
+import { Transaction, TransactionType } from '@/types/transaction'
+import { mount } from '@vue/test-utils'
+import { describe, expect, it } from 'vitest'
+import TransactionHistory from '../TransactionHistory.vue'
 
 // Mock ConfirmationModal, da wir nicht dessen Funktionalität testen wollen
 const ConfirmationModal = {
@@ -38,7 +38,7 @@ describe('TransactionHistory.vue', () => {
         transactionType: TransactionType.BUY,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-      } as any, // Wir verwenden 'as any' wegen der Diskrepanz zwischen den Types und der tatsächlichen API
+      } as Transaction, // Wir verwenden 'as any' wegen der Diskrepanz zwischen den Types und der tatsächlichen API
       {
         id: 't2',
         stockSymbol: 'GOOGL',
@@ -48,7 +48,7 @@ describe('TransactionHistory.vue', () => {
         transactionType: TransactionType.BUY,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-      } as any,
+      } as Transaction,
     ],
   }
 

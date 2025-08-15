@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest'
-import { setActivePinia, createPinia } from 'pinia'
+import { createPinia, setActivePinia } from 'pinia'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { usePortfolioStore } from '../portfolioStore'
 
 vi.mock('@/services/portfolioService', () => ({
@@ -13,10 +13,9 @@ vi.mock('@/services/portfolioService', () => ({
   },
 }))
 
-import { portfolioService } from '@/services/portfolioService'
 import type { NewTransactionData } from '@/components/AddTransactionModal.vue'
+import { portfolioService } from '@/services/portfolioService'
 import { TransactionType } from '@/types/transaction'
-import { isAxiosError } from 'axios'
 
 describe('Portfolio Store', () => {
   beforeEach(() => {

@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount } from '@vue/test-utils'
 import AddTransactionModal from '../AddTransactionModal.vue'
 import { TransactionType } from '@/types/transaction'
+import type { NewTransactionData } from '@/types/transaction'
 import { portfolioService } from '@/services/portfolioService'
 import type { StockSearchItem, StockSearchResult } from '@/types/stock'
 
@@ -96,7 +97,7 @@ describe('AddTransactionModal', () => {
     await wrapper.find('form').trigger('submit')
 
     expect(wrapper.emitted()).toHaveProperty('save')
-    const saveEvents = wrapper.emitted('save') as any[][]
+    const saveEvents = wrapper.emitted('save') as NewTransactionData[][]
     expect(saveEvents[0][0]).toEqual(transactionData)
   })
 

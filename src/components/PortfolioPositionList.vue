@@ -9,7 +9,7 @@
 <script setup lang="ts">
 import type { Portfolio } from '@/types/portfolio'
 
-const props = defineProps<{
+defineProps<{
   portfolio: Portfolio
 }>()
 </script>
